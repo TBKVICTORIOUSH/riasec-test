@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RIASEC Career Test – Upgraded</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef3f7;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #0b66c3;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      margin-top: 30px;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .question {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    select {
+      padding: 8px;
+      width: 120px;
+      font-size: 14px;
+    }
+    .btn {
+      background: #0b66c3;
+      padding: 14px;
+      border-radius: 10px;
+      color: white;
+      width: 100%;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: 0.2s;
+    }
+    .btn:hover {
+      background: #084e94;
+    }
+    #result {
+      display: none;
+      margin-top: 40px;
+      padding: 25px;
+      background: #fdfdfd;
+      border-radius: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border-left: 8px solid #0b66c3;
+    }
+    .score-box {
+      background: #eef4ff;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+
+<header>RIASEC Career Test – Versi Upgrade</header>
+
+<div class="container">
+  <p><b>Instruksi:</b> Pilih nilai 1–5 untuk setiap pernyataan.<br>
+  1 = Sangat Tidak Setuju, 5 = Sangat Setuju</p>
+
+  <form id="quizForm"></form>
+
+  <button class="btn" onclick="calculate()">Lihat Hasil</button>
+
+  <div id="result"></div>
+  <canvas id="chart" width="400" height="300"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const questions = [
+  "Saya suka bekerja dengan apapun terkait mobil", 
+  "Saya suka menjawab beragam teka-teki",
+  "Saya suka bekerja sendiri",
+  "Saya suka bekerja dalam kelompok",
+  "Saya seorang yang ambisius",
+  "Saya suka menyusun perlengkapan",
+  "Saya suka membangun sesuatu",
+  "Saya suka membaca tentang seni dan musik",
+  "Saya suka instruksi yang jelas",
+  "Saya suka mempersuasi orang",
+  "Saya suka melakukan percobaan",
+  "Saya suka mengajar/melatih orang lain",
+  "Saya suka membantu orang lain memecahkan masalah",
+  "Saya suka memelihara binatang",
+  "Saya tidak keberatan bekerja 8 jam/hari di kantor",
+  "Saya suka berjualan",
+  "Saya suka menulis kreatif",
+  "Saya suka sains",
+  "Saya cepat mengerjakan tugas baru",
+  "Saya suka membantu penyembuhan orang lain",
+  "Saya suka mempelajari bagaimana sesuatu terjadi",
+  "Saya suka merakit sesuatu",
+  "Saya termasuk orang yang kreatif",
+  "Saya memperhatikan hal-hal detail",
+  "Saya suka mengisi atau mengetik",
+  "Saya suka menganalisis sesuatu",
+  "Saya suka bermain musik atau menyanyi",
+  "Saya suka mempelajari kebudayaan",
+  "Saya suka memulai bisnis sendiri",
+  "Saya suka memasak",
+  "Saya suka bermain peran",
+  "Saya termasuk orang yang praktis",
+  "Saya suka bekerja dengan angka dan grafik",
+  "Saya suka terlibat dalam diskusi",
+  "Saya cukup bagus dalam membuat catatan pekerjaan",
+  "Saya suka memimpin",
+  "Saya suka bekerja di luar ruangan",
+  "Saya lebih suka bekerja di dalam kantor",
+  "Saya termasuk bagus dalam matematika",
+  "Saya suka membantu orang lain",
+  "Saya suka menggambar",
+  "Saya suka berbicara di depan umum"
+];
+
+const riasecMap = [
+  "R","I","I","S","E","C","R","A","C","E","I","S","S","R",
+  "C","E","A","I","R","S","I","R","A","C","C","I","A","A",
+  "E","R","A","R","C","S","C","E","R","C","I","A","E"
+];
+
+const descriptions = {
+  R: { name: "Realistic", desc: "Praktis, teknis, suka bekerja dengan alat.", jobs: "Teknisi, Mekanik, Engineer" },
+  I: { name: "Investigative", desc: "Analitis, suka riset, ilmiah.", jobs: "Data Analyst, Peneliti, Programmer" },
+  A: { name: "Artistic", desc: "Kreatif, ekspresif.", jobs: "Desainer, Penulis, Musisi" },
+  S: { name: "Social", desc: "Membantu, mengajar.", jobs: "Guru, Konselor, Perawat" },
+  E: { name: "Enterprising", desc: "Pemimpin, persuasif.", jobs: "Sales, Entrepreneur, Manager" },
+  C: { name: "Conventional", desc: "Detail, rapi.", jobs: "Admin, Finance, Auditor" }
+};
+
+function buildForm() {
+  let html = "";
+  questions.forEach((q, i) => {
+    html += `<div class='question'>
+      <p>${i+1}. ${q}</p>
+      <select id='q${i}' required>
+        <option value=''>Pilih</option>
+        <option value='1'>1</option>
+        <option value='2'>2</option>
+        <option value='3'>3</option>
+        <option value='4'>4</option>
+        <option value='5'>5</option>
+      </select>
+    </div>`;
+  });
+  document.getElementById("quizForm").innerHTML = html;
+}
+
+function calculate() {
+  let scores = { R:0, I:0, A:0, S:0, E:0, C:0 };
+  for (let i = 0; i < questions.length; i++) {
+    const val = parseInt(document.getElementById(`q${i}`).value);
+    if (!val) return alert("Masih ada yang belum diisi!");
+    const type = riasecMap[i];
+    scores[type] += val;
+  }
+
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const dominant = sorted[0][0];
+  const d = descriptions[dominant];
+
+  let html = `<h2>Hasil RIASEC Anda</h2>`;
+  sorted.forEach(s => {
+    html += `<div class='score-box'><b>${s[0]} (${descriptions[s[0]].name}):</b> ${s[1]}</div>`;
+  });
+
+  html += `<h3>Tipe Dominan: ${d.name}</h3><p>${d.desc}</p><h3>Rekomendasi Karier</h3><p>${d.jobs}</p>`;
+
+  document.getElementById("result").style.display = "block";
+  document.getElementById("result").innerHTML = html;
+
+  drawChart(scores);
+}
+
+function drawChart(scores) {
+  const ctx = document.getElementById("chart").getContext("2d");
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['R', 'I', 'A', 'S', 'E', 'C'],
+      datasets: [{
+        label: 'Skor Anda',
+        data: [scores.R, scores.I, scores.A, scores.S, scores.E, scores.C],
+        fill: true,
+        borderColor: '#0b66c3'
+      }]
+    },
+    options: { scale: { ticks: { beginAtZero: true, max: 40 } } }
+  });
+}
+
+buildForm();
+</script>
+</body>
+</html>
